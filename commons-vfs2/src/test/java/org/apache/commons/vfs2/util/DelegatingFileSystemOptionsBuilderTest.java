@@ -16,16 +16,9 @@
  */
 package org.apache.commons.vfs2.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemOptions;
+import org.apache.commons.vfs2.auth.StaticUserAuthenticator;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.commons.vfs2.provider.http.HttpFileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
@@ -33,6 +26,11 @@ import org.apache.commons.vfs2.provider.sftp.TrustEveryoneUserInfo;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+
+import static org.junit.Assert.*;
 
 /**
  * Some tests for the DelegatingFileSystemOptionsBuilder
@@ -64,15 +62,19 @@ public class DelegatingFileSystemOptionsBuilderTest {
 
         delgate.setConfigString(opts, "http", "proxyHost", "proxy");
         delgate.setConfigString(opts, "http", "proxyPort", "8080");
+        StaticUserAuthenticator proxyAuth = new StaticUserAuthenticator("DOMAIN", "USR", "PWD");
+        delgate.setConfigObject(opts, "http", "proxyAuthenticator", proxyAuth);
         delgate.setConfigClass(opts, "sftp", "userinfo", TrustEveryoneUserInfo.class);
         delgate.setConfigStrings(opts, "sftp", "identities", identityPaths);
 
-        assertEquals("http.proxyHost", HttpFileSystemConfigBuilder.getInstance().getProxyHost(opts), "proxy");
-        assertEquals("http.proxyPort", HttpFileSystemConfigBuilder.getInstance().getProxyPort(opts), 8080);
-        assertEquals("sftp.userInfo", SftpFileSystemConfigBuilder.getInstance().getUserInfo(opts).getClass(),
-                TrustEveryoneUserInfo.class);
+        HttpFileSystemConfigBuilder httpFileSystemConfigBuilder = HttpFileSystemConfigBuilder.getInstance();
+        assertEquals("http.proxyHost", httpFileSystemConfigBuilder.getProxyHost(opts), "proxy");
+        assertEquals("http.proxyPort", httpFileSystemConfigBuilder.getProxyPort(opts), 8080);
+        assertEquals("http.proxyAuthenticator", httpFileSystemConfigBuilder.getProxyAuthenticator(opts), proxyAuth);
+        SftpFileSystemConfigBuilder sftpFileSystemConfigBuilder = SftpFileSystemConfigBuilder.getInstance();
+        assertEquals("sftp.userInfo", sftpFileSystemConfigBuilder.getUserInfo(opts).getClass(), TrustEveryoneUserInfo.class);
 
-        final File identities[] = SftpFileSystemConfigBuilder.getInstance().getIdentities(opts);
+        final File identities[] = sftpFileSystemConfigBuilder.getIdentities(opts);
         assertNotNull("sftp.identities", identities);
         assertEquals("sftp.identities size", identities.length, identityPaths.length);
         for (int iterIdentities = 0; iterIdentities < identities.length; iterIdentities++) {

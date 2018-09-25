@@ -16,23 +16,15 @@
  */
 package org.apache.commons.vfs2.util;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileSystemConfigBuilder;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
+
+import java.lang.reflect.*;
+import java.util.*;
 
 /**
  * This class use reflection to set a configuration value using the fileSystemConfigBuilder associated the a scheme.<br>
@@ -128,6 +120,22 @@ public class DelegatingFileSystemOptionsBuilder {
     public void setConfigStrings(final FileSystemOptions fso, final String scheme, final String name,
             final String[] values) throws FileSystemException {
         final Context ctx = new Context(fso, scheme, name, values);
+
+        setValues(ctx);
+    }
+
+    /**
+     * Set a single object value.
+     *
+     * @param fso    FileSystemOptions
+     * @param scheme scheme
+     * @param name   name
+     * @param value  value
+     * @throws FileSystemException if an error occurs.
+     */
+    public <T> void setConfigObject(final FileSystemOptions fso, final String scheme, final String name,
+                                    final T value) throws FileSystemException {
+        final Context ctx = new Context(fso, scheme, name, new Object[]{value});
 
         setValues(ctx);
     }
